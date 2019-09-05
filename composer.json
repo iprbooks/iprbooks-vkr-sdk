@@ -1,0 +1,29 @@
+{
+  "name": "iprbooks/iprbooks-vkr-sdk",
+  "description": "IPR Books VKR SDK",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Andrey Cherkasov",
+      "email": "andrey.cherkasov93@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Iprbooks\\Vkr\\Sdk\\": "src/"
+    }
+  },
+  "require": {
+    "php": "5.3.* || 5.4.* || 5.5.* || 5.6.* || 7.0.* || 7.1.* || 7.2.*",
+    "ext-curl": "*",
+    "ext-json": "*"
+  },
+  "config": {
+    "secure-http": false,
+    "sort-packages": true,
+    "platform": {
+      "php": "7.0"
+    }
+  }
+}

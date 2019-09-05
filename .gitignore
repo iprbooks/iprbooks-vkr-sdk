@@ -1,0 +1,11 @@
+.idea/
+
+vendor/
+
+public/
+build/
+cache/
+
+composer.phar
+composer.lock
+index.php
