@@ -1,85 +1,103 @@
 <?php
 
+namespace Iprbooks\Vkr\Sdk;
+
+use Firebase\JWT\JWT;
+
 class Client
 {
-    const HOST = 'http://192.168.0.200/queue/public/index.php';
-    const LOGIN = self::HOST . '/auth/login';
-    const UPLOAD = self::HOST . '/upload';
-    const STATUS = self::HOST . '/{id}/status?token={token}';
-    const REPORT = self::HOST . '/{id}/report?token={token}';
+    const HOST = 'https://api.bse.vkr-vuz.ru/api/';
+    const X_API_KEY = 'Ts1+E8*!mY94Qj!t';
 
-    private $token;
-    private $curl;
+    private $clientId;
+    private $secretKey;
 
 
-    public function __construct($email, $password)
+    public function __construct($clientId, $secretKey)
     {
-        $this->curl = curl_init();
-
-        $post = array('email' => $email, 'password' => $password);
-        curl_setopt($this->curl, CURLOPT_URL, self::LOGIN);
-        curl_setopt($this->curl, CURLOPT_POST, true);
-        curl_setopt($this->curl, CURLOPT_POSTFIELDS, $post);
-        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-
-        $result = curl_exec($this->curl);
-        $json = json_decode($result, true);
-        $this->token = $json['token'];
-
-        if (!$this->token) {
-            throw new Exception($json['error']);
-        }
+        $this->clientId = $clientId;
+        $this->secretKey = $secretKey;
     }
 
-    public function __destruct()
+    private function getJwt()
     {
-        curl_close($this->curl);
-    }
-
-    public final function uploadReport($id, $type, $path)
-    {
-        if (function_exists('curl_file_create')) {
-            $json = curl_file_create($path);
-        } else {
-            $json = '@' . realpath($path);
-        }
-
-        $post = array(
-            'document_id' => $id,
-            'document_type' => $type,
-            'token' => $this->token,
-            'json' => $json
+        $time = time();
+        $data = array(
+            'client_id' => $this->clientId,
+            'time' => $time,
+            'ip' => '192.168.0.1',
+            'exp' => $time + 36000
         );
 
-        curl_setopt($this->curl, CURLOPT_URL, self::UPLOAD);
-        curl_setopt($this->curl, CURLOPT_POST, true);
-        curl_setopt($this->curl, CURLOPT_POSTFIELDS, $post);
+        return JWT::encode($data, $this->secretKey);
+//        var_dump((array)JWT::decode($this->token, $this->secretKey, ['HS256']));
+    }
 
-        return curl_exec($this->curl);
+//Route::post('/create', [App\Http\Controllers\QueueController::class, 'create']);
+//Route::post('{id}/status', [App\Http\Controllers\QueueController::class, 'status']);
+//Route::post('{id}/report', [App\Http\Controllers\QueueController::class, 'report']);
+
+    public final function create($docId, $docType, $url)
+    {
+        $curl = curl_init();
+        $url = self::HOST . 'doc/create?client_id=' . $this->clientId
+            . '&doc_id=' . $docId
+            . '&doc_type=' . $docType
+            . '&url=' . $url;
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer " . $this->getJwt(),
+                "X-APIKey: " . self::X_API_KEY
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        return $response;
     }
 
     public final function getReportStatus($id)
     {
-        $url = str_replace('{id}', $id, self::STATUS);
-        $url = str_replace('{token}', $this->token, $url);
+        $curl = curl_init();
+        $url = self::HOST . 'doc/' . $id . '/status?client_id=' . $this->clientId;
 
-        curl_setopt($this->curl, CURLOPT_URL, $url);
-        curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'GET');
-        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer " . $this->getJwt(),
+                "X-APIKey: " . self::X_API_KEY
+            ),
+        ));
 
-        return curl_exec($this->curl);
+        $response = curl_exec($curl);
+        curl_close($curl);
+        return $response;
     }
 
     public final function getReportJson($id)
     {
-        $url = str_replace('{id}', $id, self::REPORT);
-        $url = str_replace('{token}', $this->token, $url);
+        $curl = curl_init();
+        $url = self::HOST . 'doc/' . $id . '/report?client_id=' . $this->clientId;
 
-        curl_setopt($this->curl, CURLOPT_URL, $url);
-        curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'GET');
-        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer " . $this->getJwt(),
+                "X-APIKey: " . self::X_API_KEY
+            ),
+        ));
 
-        return curl_exec($this->curl);
+        $response = curl_exec($curl);
+        curl_close($curl);
+        return $response;
     }
 
 }
