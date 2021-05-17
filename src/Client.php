@@ -2,8 +2,7 @@
 
 namespace Iprbooks\Vkr\Sdk;
 
-//require '/var/www/html/vkr-sdk-test/iprbooks-vkr-sdk/vendor/autoload.php';
-require '/var/www/html/vkr-sdk-test/iprbooks-vkr-sdk/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 
 use Firebase\JWT\JWT;
