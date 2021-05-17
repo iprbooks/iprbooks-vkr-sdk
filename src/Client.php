@@ -2,6 +2,10 @@
 
 namespace Iprbooks\Vkr\Sdk;
 
+//require '/var/www/html/vkr-sdk-test/iprbooks-vkr-sdk/vendor/autoload.php';
+require '/var/www/html/vkr-sdk-test/iprbooks-vkr-sdk/vendor/autoload.php';
+
+
 use Firebase\JWT\JWT;
 
 class Client
@@ -30,33 +34,48 @@ class Client
         );
 
         return JWT::encode($data, $this->secretKey);
-//        var_dump((array)JWT::decode($this->token, $this->secretKey, ['HS256']));
     }
 
-//Route::post('/create', [App\Http\Controllers\QueueController::class, 'create']);
-//Route::post('{id}/status', [App\Http\Controllers\QueueController::class, 'status']);
-//Route::post('{id}/report', [App\Http\Controllers\QueueController::class, 'report']);
-
-    public final function create($docId, $docType, $url)
+    public final function create($docId, $docType, $filePath)
     {
-        $curl = curl_init();
-        $url = self::HOST . 'doc/create?client_id=' . $this->clientId
-            . '&doc_id=' . $docId
-            . '&doc_type=' . $docType
-            . '&url=' . $url;
+        $fileName = basename($filePath);
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_HTTPHEADER => array(
-                "Authorization: Bearer " . $this->getJwt(),
-                "X-APIKey: " . self::X_API_KEY
-            ),
-        ));
+        $params = array(
+            'file_name' => $fileName,
+            'doc_id' => $docId,
+            'doc_type' => $docType,
+            'client_id' => $this->clientId
+        );
 
-        $response = curl_exec($curl);
-        curl_close($curl);
+
+        $apiMethod = sprintf("%s?%s", "doc/create", http_build_query($params, '', '&'));
+
+        $headers = array(
+            'Authorization: Bearer ' . $this->getJwt(),
+            'X-APIKey: ' . self::X_API_KEY,
+            'Content-Type: multipart/form-data',
+            'Accept: application/json'
+        );
+
+
+        if (function_exists('curl_file_create')) {
+            $cFile = curl_file_create($filePath);
+        } else {
+            $cFile = '@' . realpath($filePath);
+        }
+        $post = array('file' => $cFile);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_URL, self::HOST . $apiMethod);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
         return $response;
     }
 
